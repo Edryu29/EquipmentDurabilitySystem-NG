@@ -12,8 +12,7 @@ void FoundEquipData::GenerateName()
 	NewEntry.AddExtraList(pExtraData);
 
 	name = std::string(NewEntry.GetDisplayName());
-	if (pForm->formType == RE::FormType::Weapon && ini.GetWidgetSettings("HidePoisonName") == 0 && pExtraData->HasType(RE::ExtraDataType::kPoison))
-	{
+	if (pForm->IsWeapon() && ini.GetWidgetSettings("HidePoisonName") == 0 && pExtraData->HasType(RE::ExtraDataType::kPoison)) {
 		RE::ExtraPoison* xPoison = static_cast<RE::ExtraPoison*>(pExtraData->GetByType(RE::ExtraDataType::kPoison));
 		if (xPoison && xPoison->poison)
 			name += " " + std::string(xPoison->poison->GetFullName()) + " (" + std::to_string(xPoison->count) + ")";
@@ -33,8 +32,7 @@ float FoundEquipData::GetItemHealthPercent()
 	return 1.0f;
 }
 
-void FoundEquipData::SetItemHealthPercent(float value)
-{
+void FoundEquipData::SetItemHealthPercent(float value) {
 	if (!pExtraData)
 		return;
 
@@ -48,32 +46,28 @@ void FoundEquipData::SetItemHealthPercent(float value)
 	}
 }
 
-bool FoundEquipData::CanBreak()
-{
+bool FoundEquipData::CanBreak() {
 	if (!pForm || !pExtraData)
 		return false;
 
-	if (ini.GetDegradationSettings("NoBreakMagicDisallowEnchanting") == 1)
-	{
-		static RE::BGSKeyword *keywordMagicDisallow = RE::TESDataHandler::GetSingleton()->LookupForm(RE::FormID(0x0C27BD), "Skyrim.esm")->As<RE::BGSKeyword>();
-		if (pForm->formType == RE::FormType::Weapon)
-		{
-			if (pForm->As<RE::TESObjectWEAP>()->HasKeyword(keywordMagicDisallow))
-				return false;
-		}
-		else if (pForm->formType == RE::FormType::Armor)
-		{
-			if (pForm->As<RE::TESObjectARMO>()->HasKeyword(keywordMagicDisallow))
-				return false;
-		}
+	// Do not break items that you cannot disenchant, user preference
+	auto utility = Utility::GetSingleton();
+	if (ini.GetDegradationSettings("NoBreakMagicDisallowEnchanting") == 1) {
+		if (pForm->IsWeapon() && pForm->As<RE::TESObjectWEAP>()->HasKeyword(utility->keywordMagicDisallow))
+			return false;
+		else if (pForm->IsArmor() && pForm->As<RE::TESObjectARMO>()->HasKeyword(utility->keywordMagicDisallow))
+			return false;
 	}
 
+	// Unarmed
 	if (pForm->formID == 0x0001F4)
 		return false;
 
+	// Compare to the break form list
 	if (ini.HasNoBreakForms(pForm->formID))
 		return false;
 
+	// Dont break quest items
 	RE::InventoryEntryData newData(pForm->As<RE::TESBoundObject>(), 1);
 	if (newData.IsQuestObject())
 		return false;
@@ -81,20 +75,18 @@ bool FoundEquipData::CanBreak()
 	return true;
 }
 
-bool FoundEquipData::CanTemper()
-{
+bool FoundEquipData::CanTemper() {
 	if (!pForm)
 		return false;
 
 	auto utility = Utility::GetSingleton();
-	if (pForm->formType == RE::FormType::Weapon)
-	{
+	if (pForm->IsWeapon()) {
+		// Form cannot be a staff or a bound weapon
 		RE::TESObjectWEAP* weap = pForm->As<RE::TESObjectWEAP>();
-		if (weap->GetWeaponType() != RE::WEAPON_TYPE::kStaff && (weap->weaponData.flags2 & RE::TESObjectWEAP::Data::Flag2::kBoundWeapon) == RE::TESObjectWEAP::Data::Flag2::kNone)
+		if (!weap->IsStaff() && !weap->IsBound())
 			return true;
-	}
-	else if (pForm->formType == RE::FormType::Armor)
-	{
+	} else if (pForm->IsArmor()) {
+		// Armor has to bip one of the given armor slots
 		RE::TESObjectARMO *armo = pForm->As<RE::TESObjectARMO>();
 		if (armo->HasPartOf(RE::BGSBipedObjectForm::BipedObjectSlot::kHead) || armo->HasPartOf(RE::BGSBipedObjectForm::BipedObjectSlot::kHair) 
 			|| armo->HasPartOf(RE::BGSBipedObjectForm::BipedObjectSlot::kBody) || armo->HasPartOf(RE::BGSBipedObjectForm::BipedObjectSlot::kHands) 
@@ -108,23 +100,17 @@ bool FoundEquipData::CanTemper()
 	return false;
 }
 
-FoundEquipData FoundEquipData::FindEquippedWeapon(RE::InventoryChanges *exChanges, bool abLeftHand, RE::TESForm* form)
-{
+FoundEquipData FoundEquipData::FindEquippedWeapon(RE::InventoryChanges *exChanges, bool abLeftHand, RE::TESForm* form) {
 	FoundEquipData equipData;
 
-	if (exChanges->entryList)
-	{
-		for (const auto& pEntry : *exChanges->entryList)
-		{
+	if (exChanges->entryList) {
+		for (const auto& pEntry : *exChanges->entryList) {
 			if (!pEntry || pEntry->GetObject() != form || !pEntry->extraLists)
 				continue;
 
-			for (const auto& pExtraDataList : *pEntry->extraLists)
-			{
-				if (pExtraDataList)
-				{
-					if ((!abLeftHand && pExtraDataList->HasType(RE::ExtraDataType::kWorn)) || (abLeftHand && pExtraDataList->HasType(RE::ExtraDataType::kWornLeft)))
-					{
+			for (const auto& pExtraDataList : *pEntry->extraLists) {
+				if (pExtraDataList) {
+					if ((!abLeftHand && pExtraDataList->HasType(RE::ExtraDataType::kWorn)) || (abLeftHand && pExtraDataList->HasType(RE::ExtraDataType::kWornLeft))) {
 						equipData.pForm = pEntry->GetObject();
 						equipData.pExtraData = pExtraDataList;
 
@@ -138,23 +124,17 @@ FoundEquipData FoundEquipData::FindEquippedWeapon(RE::InventoryChanges *exChange
 	return equipData;
 }
 
-FoundEquipData FoundEquipData::FindEquippedArmor(RE::InventoryChanges *exChanges, RE::BGSBipedObjectForm::BipedObjectSlot slotMask)
-{
+FoundEquipData FoundEquipData::FindEquippedArmor(RE::InventoryChanges *exChanges, RE::BGSBipedObjectForm::BipedObjectSlot slotMask) {
 	FoundEquipData equipData;
 
-	if (exChanges->entryList)
-	{
-		for (const auto& pEntry : *exChanges->entryList)
-		{
-			if (!pEntry || pEntry->GetObject()->GetFormType() != RE::FormType::Armor || !pEntry->GetObject()->As<RE::TESObjectARMO>()->HasPartOf(slotMask) || !pEntry->extraLists)
+	if (exChanges->entryList) {
+		for (const auto& pEntry : *exChanges->entryList) {
+			if (!pEntry || !pEntry->GetObject()->IsArmor() || !pEntry->GetObject()->As<RE::TESObjectARMO>()->HasPartOf(slotMask) || !pEntry->extraLists)
 				continue;
 
-			for (const auto& pExtraDataList : *pEntry->extraLists)
-			{
-				if (pExtraDataList)
-				{
-					if (pExtraDataList->HasType(RE::ExtraDataType::kWorn) || pExtraDataList->HasType(RE::ExtraDataType::kWornLeft))
-					{
+			for (const auto& pExtraDataList : *pEntry->extraLists) {
+				if (pExtraDataList) {
+					if (pExtraDataList->HasType(RE::ExtraDataType::kWorn) || pExtraDataList->HasType(RE::ExtraDataType::kWornLeft)) {
 						equipData.pForm = pEntry->GetObject();
 						equipData.pExtraData = pExtraDataList;
 

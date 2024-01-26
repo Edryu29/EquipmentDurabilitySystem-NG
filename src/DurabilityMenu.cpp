@@ -362,6 +362,7 @@ class InputEventHandler : public RE::BSTEventSink<RE::InputEvent*> {
 						}
 
 						if (scan_code == ini.GetWidgetSettings("ToggleKeyCode")) {
+							logger::debug("Button Pressed");
 							dura->visible = !dura->visible;
 						}
 
@@ -397,19 +398,17 @@ DurabilityMenu::DurabilityMenu() : updateCount(0), visible(true)
 	{
 		// Load the SWF file with the medium depth priority
 		logger::debug("loaded Interface - {}.swf", swfName);
-		depthPriority = 2;
+		depthPriority = 0;
 
 		// Dunno how to translate this flag... guessing from 0x10802
 		menuFlags.set(RE::UI_MENU_FLAGS::kAllowSaving);
 		menuFlags.set(RE::UI_MENU_FLAGS::kRequiresUpdate);
-		menuFlags.set(RE::UI_MENU_FLAGS::kDontHideCursorWhenTopmost);
-		menuFlags.set(RE::UI_MENU_FLAGS::kRendersOffscreenTargets);
 		
 		// Allow keyboard input while menu is open
 		inputContext = Context::kNone;
 
 		// disable mouse input
-		//uiMovie->SetMouseCursorCount(0);
+		uiMovie->SetMouseCursorCount(0);
 	}
 }
 
@@ -426,8 +425,6 @@ bool DurabilityMenu::Register()
 	// Register the drability menu
 	mm->Register("Durability Menu", []() -> RE::IMenu * { return new DurabilityMenu; });
 	AutoOpenDurabilityMenuSink::Register();
-
-	logger::debug("Registered Durability Menu");
 
 	return true;
 }

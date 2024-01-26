@@ -106,6 +106,7 @@ static void TemperDecay(FoundEquipData eqD, RE::Actor* actor, bool powerAttack) 
 
 	float itemHealthPercent = eqD.GetItemHealthPercent();
 
+	// Check if item will break
 	if (itemHealthPercent <= ini.EquipmentHealthThreshold)
 	{
 		double chance = ini.GetBreakChanceSettings(eqD.pForm);
@@ -141,6 +142,7 @@ static void TemperDecay(FoundEquipData eqD, RE::Actor* actor, bool powerAttack) 
 	if (rate == 0.0)
 		return;
 
+	// Health Degredation
 	if (powerAttack)
 		rate *= ini.GetDegradationRateSettings("PowerAttackMultiplier");
 
@@ -219,7 +221,6 @@ public:
 				}
 			}
 		}
-
 
 		if (a_event->cause && a_event->cause->formType == RE::FormType::ActorCharacter) {
 			RE::Actor* actor = a_event->cause->As<RE::Actor>();

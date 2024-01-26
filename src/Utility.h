@@ -6,6 +6,7 @@ public:
     RE::BGSKeyword* keywordWarhammer;
     RE::BGSKeyword* keywordClothing;
     RE::BGSKeyword* keywordJewelry;
+    RE::BGSKeyword* keywordMagicDisallow;
 
     RE::TESFaction* factionFollower1;
     RE::TESFaction* factionFollower2;
@@ -49,5 +50,14 @@ public:
     // Player checks
     static bool IsPlayerInDialogue() {
         return Utility::GetSingleton()->GetUI()->IsMenuOpen(RE::DialogueMenu::MENU_NAME);
+    }
+
+    static bool IsPlayerInMenu() {
+        auto ui = Utility::GetSingleton()->GetUI();
+
+        if (ui && !ui->GameIsPaused() && !ui->IsApplicationMenuOpen() && !ui->IsItemMenuOpen() && !ui->IsMenuOpen(RE::InterfaceStrings::GetSingleton()->dialogueMenu))
+            return true;
+        else
+            return false;
     }
 };

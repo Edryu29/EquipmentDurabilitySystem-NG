@@ -31,6 +31,7 @@ public:
         utility->keywordWarhammer = dataHandler->LookupForm(RE::FormID(0x06D930), skyrimPluginName)->As<RE::BGSKeyword>();
         utility->keywordClothing = dataHandler->LookupForm(RE::FormID(0x08F95B), skyrimPluginName)->As<RE::BGSKeyword>();
         utility->keywordJewelry = dataHandler->LookupForm(RE::FormID(0x08F95A), skyrimPluginName)->As<RE::BGSKeyword>();
+        utility->keywordMagicDisallow = dataHandler->LookupForm(RE::FormID(0x0C27BD), skyrimPluginName)->As<RE::BGSKeyword>();
 
         // Follower Factions
         utility->factionFollower1 = dataHandler->LookupForm(RE::FormID(0x05C84D), skyrimPluginName)->As<RE::TESFaction>();
