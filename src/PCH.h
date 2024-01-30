@@ -11,13 +11,11 @@
 #define DLLEXPORT __declspec(dllexport)
 
 using namespace std::literals;
+namespace logger = SKSE::log;
 
-namespace stl
-{
+namespace stl {
 	using namespace SKSE::stl;
 }
-
-namespace logger = SKSE::log;
 
 namespace util {
     using SKSE::stl::report_and_fail;

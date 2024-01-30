@@ -4,6 +4,11 @@
 #include <unordered_map>
 #include <unordered_set>
 
+struct Enchantments {
+	RE::EnchantmentItem* enchantment;
+	std::string name;
+};
+
 class INIFile
 {
 public:
@@ -21,6 +26,13 @@ public:
 	bool HasNoBreakForms(int formid);
 
 	float EquipmentHealthThreshold;
+
+	std::vector<Enchantments> eWeapon;
+	std::vector<Enchantments> eBody;
+	std::vector<Enchantments> eHead;
+	std::vector<Enchantments> eHands;
+	std::vector<Enchantments> eFeet;
+	std::vector<Enchantments> eShield;
 
 private:
 	void ToLower(std::string &str);
