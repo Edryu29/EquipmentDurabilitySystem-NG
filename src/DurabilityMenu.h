@@ -16,30 +16,34 @@ protected:
 	static DurabilityMenu * ms_pSingleton;
 
 public:
+	// Constructor
 	DurabilityMenu();
 	virtual ~DurabilityMenu();
 
+	// New Methods
 	static bool Register();
+	static DurabilityMenu * GetSingleton() { return ms_pSingleton; }
+	void hotkeyActivation();
 
-	static DurabilityMenu * GetSingleton() {
-		return ms_pSingleton;
-	}
-
-	// override IMenu
+	// Override IMenu
 	virtual UI_MESSAGE_RESULTS ProcessMessage(RE::UIMessage& a_message) override;
 	virtual void AdvanceMovie(float a_interval, std::uint32_t a_currentTime) override;
 
-	// override BSTEventSink
+	// Override BSTEventSink
 	virtual EventResult ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>* a_eventSource) override;
 	virtual EventResult ProcessEvent(const SKSE::ActionEvent* a_event, RE::BSTEventSource<SKSE::ActionEvent>* a_eventSource) override;
-
-	bool visible;
-
+	
 protected:
 	void OnMenuOpen();
 	void OnMenuClose();
 	void UpdateMenu();
 
 	int updateCount;
-	chrono_clock::time_point _movieLastTime;
+	chrono_clock::time_point _current;
+	chrono_clock::time_point _logged;
+
+	bool hotkeyActivated;
+	bool skseActivated;
+
+	bool visible;
 };

@@ -61,6 +61,7 @@ INIFile::INIFile() : EquipmentHealthThreshold(1.0f)
 	widgetMap["hidepoisonname"] = 0;
 	widgetMap["hidewithweaponssheathed"] = 0;
 	widgetMap["togglekeycode"] = 0;
+	widgetMap["toggleduration"] = 0.0;
 	widgetMap["flags"] = 8;
 }
 
@@ -316,7 +317,7 @@ void INIFile::SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* secti
 					degradationMap.at(key) = iValue;
 				} else if (stricmp(str.pItem,"temperchance") || stricmp(str.pItem,"bosstemperchance")) {
 					temperMap.at(key) = iValue;
-				} else if (stricmp(str.pItem,"scale")|| stricmp(str.pItem,"togglekeycode") || stricmp(str.pItem,"flags")) {
+				} else if (stricmp(str.pItem,"scale")|| stricmp(str.pItem,"togglekeycode") || stricmp(str.pItem,"flags") || stricmp(str.pItem,"toggleDuration")) {
 					widgetMap.at(key) = iValue;
 				} else if (stricmp(str.pItem,"positionx") || stricmp(str.pItem,"positiony")) {
 					if (iValue <= 100)

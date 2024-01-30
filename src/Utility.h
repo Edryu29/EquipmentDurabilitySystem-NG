@@ -14,6 +14,8 @@ public:
     RE::BGSLocationRefType* locationBoss;
     RE::BGSLocationRefType* locationBossContainer;
 
+    std::vector<RE::BSFixedString> menuList;
+
     uintptr_t PlayerSingletonAddress;
     uintptr_t UISingletonAddress;
     uintptr_t MenuControlsSingletonAddress;
@@ -47,12 +49,32 @@ public:
         }
     }
 
+    static bool IsSystemMenu(RE::BSFixedString menuName) {
+        auto menu = Utility::GetSingleton()->menuList;
+        return (std::find(menu.begin(), menu.end(), menuName) != menu.end());
+    }
+
+    static bool IsSystemMenuOpen(RE::BSFixedString menuName = "") {
+        auto ui = Utility::GetSingleton()->GetUI();
+        auto menu = Utility::GetSingleton()->menuList;
+
+        for (auto & element : menu) {
+            if (menuName.c_str() != "" && std::strcmp(element.c_str(), menuName.c_str()))
+                continue;
+
+            if (ui->IsMenuOpen(element))
+                return true;
+        }
+
+        return false;
+    }
+
     // Player checks
     static bool IsPlayerInDialogue() {
         return Utility::GetSingleton()->GetUI()->IsMenuOpen(RE::DialogueMenu::MENU_NAME);
     }
 
-    static bool IsPlayerInMenu() {
+    static bool PlayerNotInMenu() {
         auto ui = Utility::GetSingleton()->GetUI();
 
         if (ui && !ui->GameIsPaused() && !ui->IsApplicationMenuOpen() && !ui->IsItemMenuOpen() && !ui->IsMenuOpen(RE::InterfaceStrings::GetSingleton()->dialogueMenu))

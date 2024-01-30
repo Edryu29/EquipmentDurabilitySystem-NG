@@ -252,10 +252,10 @@ public:
     }
 
 	RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent *a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent> *a_eventSource) {
-		RE::UI *mm = RE::UI::GetSingleton();
+		RE::UI *ui = RE::UI::GetSingleton();
 		RE::InterfaceStrings *holder = RE::InterfaceStrings::GetSingleton();
 
-		if (a_event->menuName == holder->loadingMenu && !a_event->opening && !mm->IsMenuOpen(holder->mainMenu))
+		if (a_event->menuName == holder->loadingMenu && !a_event->opening && !ui->IsMenuOpen(holder->mainMenu))
 		{
 			DurabilityMenu *DurabilityMenu = DurabilityMenu::GetSingleton();
 			if (!DurabilityMenu)
@@ -264,8 +264,7 @@ public:
 				ui->AddMessage("Durability Menu", RE::UI_MESSAGE_TYPE::kShow, nullptr);
 			}
 
-			mm->RemoveEventSink(this);
-			//delete this;
+			ui->RemoveEventSink(this);
 		}
 
 		return RE::BSEventNotifyControl::kContinue;
@@ -288,84 +287,91 @@ class InputEventHandler : public RE::BSTEventSink<RE::InputEvent*> {
 
 	RE::BSEventNotifyControl ProcessEvent(RE::InputEvent* const* a_event,RE::BSTEventSource<RE::InputEvent*>* a_eventSource) {
 		if (a_event) {
-
-			const auto ui = RE::UI::GetSingleton();
+			auto utility = Utility::GetSingleton();
 			const auto dura = DurabilityMenu::GetSingleton();
 
-			if (ui && !ui->GameIsPaused() && !ui->IsApplicationMenuOpen() && !ui->IsItemMenuOpen() && !ui->IsMenuOpen(RE::InterfaceStrings::GetSingleton()->dialogueMenu)) {
-				for (auto event = *a_event; event; event = event->next) {
-					if (event->eventType == RE::INPUT_EVENT_TYPE::kButton) {
-						const auto button = event->AsButtonEvent();
-						if (!button || (button->IsPressed() && !button->IsDown())) continue;
+			if (utility->PlayerNotInMenu()) {
+                const auto controlMap = RE::ControlMap::GetSingleton();
+                const auto playerCharacter = RE::PlayerCharacter::GetSingleton();
+                const auto playerControls = RE::PlayerControls::GetSingleton();
 
-						auto device = button->device.get();
-						auto scan_code = button->GetIDCode();
+				if (controlMap && playerCharacter && playerControls) {
+					for (auto event = *a_event; event; event = event->next) {
+						if (event->eventType == RE::INPUT_EVENT_TYPE::kButton) {
+							const auto button = static_cast<RE::ButtonEvent*>(event);
+							if (!button || (button->IsPressed() && !button->IsDown())) continue;
 
-						if (device == RE::INPUT_DEVICE::kMouse) {
-							scan_code += 257;
-						} else if (device == RE::INPUT_DEVICE::kGamepad) {
-							RE::BSWin32GamepadDevice::Key gamepadKey =
-								static_cast<RE::BSWin32GamepadDevice::Key>(scan_code);
-							switch (gamepadKey) {
-								case RE::BSWin32GamepadDevice::Key::kUp:
-									scan_code = 266;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kDown:
-									scan_code = 267;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kLeft:
-									scan_code = 268;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kRight:
-									scan_code = 269;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kStart:
-									scan_code = 270;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kBack:
-									scan_code = 271;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kLeftThumb:
-									scan_code = 272;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kRightThumb:
-									scan_code = 273;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kLeftShoulder:
-									scan_code = 274;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kRightShoulder:
-									scan_code = 275;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kA:
-									scan_code = 276;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kB:
-									scan_code = 277;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kX:
-									scan_code = 278;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kY:
-									scan_code = 279;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kLeftTrigger:
-									scan_code = 280;
-									break;
-								case RE::BSWin32GamepadDevice::Key::kRightTrigger:
-									scan_code = 281;
-									break;
-								default:
-									scan_code = static_cast<uint32_t>(-1);
-									break;
+							auto device = button->device.get();
+							auto scan_code = button->GetIDCode();
+
+							if (device == RE::INPUT_DEVICE::kMouse) {
+								scan_code += 257;
+							} else if (device == RE::INPUT_DEVICE::kGamepad) {
+								RE::BSWin32GamepadDevice::Key gamepadKey =
+									static_cast<RE::BSWin32GamepadDevice::Key>(scan_code);
+								switch (gamepadKey) {
+									case RE::BSWin32GamepadDevice::Key::kUp:
+										scan_code = 266;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kDown:
+										scan_code = 267;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kLeft:
+										scan_code = 268;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kRight:
+										scan_code = 269;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kStart:
+										scan_code = 270;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kBack:
+										scan_code = 271;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kLeftThumb:
+										scan_code = 272;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kRightThumb:
+										scan_code = 273;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kLeftShoulder:
+										scan_code = 274;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kRightShoulder:
+										scan_code = 275;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kA:
+										scan_code = 276;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kB:
+										scan_code = 277;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kX:
+										scan_code = 278;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kY:
+										scan_code = 279;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kLeftTrigger:
+										scan_code = 280;
+										break;
+									case RE::BSWin32GamepadDevice::Key::kRightTrigger:
+										scan_code = 281;
+										break;
+									default:
+										scan_code = static_cast<uint32_t>(-1);
+										break;
+								}
 							}
-						}
 
-						if (scan_code == ini.GetWidgetSettings("ToggleKeyCode")) {
-							logger::debug("Button Pressed");
-							dura->visible = !dura->visible;
-						}
+							if ((device == RE::INPUT_DEVICE::kKeyboard || device == RE::INPUT_DEVICE::kGamepad) && !button->IsUp()) {
+								if (scan_code == ini.GetWidgetSettings("ToggleKeyCode")) {
+									dura->hotkeyActivation();
+								}
+							}
 
+
+						}
 					}
 				}
 			}
@@ -387,8 +393,7 @@ class InputEventHandler : public RE::BSTEventSink<RE::InputEvent*> {
 
 DurabilityMenu * DurabilityMenu::ms_pSingleton = nullptr;
 
-DurabilityMenu::DurabilityMenu() : updateCount(0), visible(true)
-{
+DurabilityMenu::DurabilityMenu() : updateCount(0), visible(true) {
 	// Set up the scaleform loader
 	const char swfName[] = "DurabilityMenu";
 	RE::BSScaleformManager *sm = RE::BSScaleformManager::GetSingleton();
@@ -412,42 +417,51 @@ DurabilityMenu::DurabilityMenu() : updateCount(0), visible(true)
 	}
 }
 
-DurabilityMenu::~DurabilityMenu()
-{
+DurabilityMenu::~DurabilityMenu() {
 }
 
-bool DurabilityMenu::Register()
-{
-	RE::UI *mm = RE::UI::GetSingleton();
-	if (!mm)
+bool DurabilityMenu::Register() {
+	RE::UI *ui = RE::UI::GetSingleton();
+	if (!ui)
 		return false;
 
 	// Register the drability menu
-	mm->Register("Durability Menu", []() -> RE::IMenu * { return new DurabilityMenu; });
+	ui->Register("Durability Menu", []() -> RE::IMenu * { return new DurabilityMenu; });
 	AutoOpenDurabilityMenuSink::Register();
 
 	return true;
 }
 
-// This event will open/close the widget depending on what other menus are open
-DurabilityMenu::EventResult DurabilityMenu::ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>* a_eventSource)
-{
-	if (uiMovie)
-	{
-		RE::UI *mm = RE::UI::GetSingleton();
-		RE::InterfaceStrings *holder = RE::InterfaceStrings::GetSingleton();
+void DurabilityMenu::hotkeyActivation() {
 
-		if (a_event->opening) {
-			RE::GPtr<RE::IMenu> menu = mm->GetMenu(a_event->menuName);
-			if (menu) {
-				if ((menu->menuFlags & RE::UI_MENU_FLAGS::kDontHideCursorWhenTopmost) != RE::UI_MENU_FLAGS::kNone || (menu->menuFlags & RE::UI_MENU_FLAGS::kPausesGame) != RE::UI_MENU_FLAGS::kNone) {
-					uiMovie->SetVisible(false);
-				}
-			}
-		} else {
-			if (mm->numPausesGame == 0 && mm->numDontHideCursorWhenTopmost == 0 && !uiMovie->GetVisible()) {
+	if (!skseActivated && ini.GetWidgetSettings("ToggleDuration") > 0.0 && !visible) {
+		_logged = chrono_clock::now();
+		hotkeyActivated = true;
+		visible = true;
+	} else if (ini.GetWidgetSettings("ToggleDuration") == 0.0 && !visible) {
+		visible = true;
+	} else if (!skseActivated && visible) {
+		visible = false;
+	}
+}
+
+// This event will open/close the widget depending on what other menus are open
+DurabilityMenu::EventResult DurabilityMenu::ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>* a_eventSource) {
+	if (uiMovie) {
+		auto utility = Utility::GetSingleton();
+		RE::UI *ui = RE::UI::GetSingleton();
+
+		if (a_event->opening && uiMovie->GetVisible()) {
+			RE::GPtr<RE::IMenu> menu = ui->GetMenu(a_event->menuName);
+			if (menu && (menu->menuFlags & RE::UI_MENU_FLAGS::kDontHideCursorWhenTopmost) != RE::UI_MENU_FLAGS::kNone || (menu->menuFlags & RE::UI_MENU_FLAGS::kPausesGame) != RE::UI_MENU_FLAGS::kNone)
+				uiMovie->SetVisible(false);
+			else if (utility->IsSystemMenu(a_event->menuName))
+				uiMovie->SetVisible(false);
+		} else if (!uiMovie->GetVisible()) {
+			if (ui->numPausesGame == 0 && ui->numDontHideCursorWhenTopmost == 0)
 				uiMovie->SetVisible(true);
-			}
+			else if (!utility->IsSystemMenu(a_event->menuName) && !utility->IsSystemMenuOpen(a_event->menuName))
+				uiMovie->SetVisible(true);
 		}
 	}
 	
@@ -458,12 +472,14 @@ DurabilityMenu::EventResult DurabilityMenu::ProcessEvent(const RE::MenuOpenClose
 DurabilityMenu::EventResult DurabilityMenu::ProcessEvent(const SKSE::ActionEvent *a_event, RE::BSTEventSource<SKSE::ActionEvent> *a_eventSource) {
 	auto utility = Utility::GetSingleton();
 
-	if (a_event->actor == utility->GetPlayer())
-	{
+	if (a_event->actor == utility->GetPlayer()) {
 		if (a_event->type == SKSE::ActionEvent::Type::kEndDraw) {
 			visible = true;
+			skseActivated = true;
+			hotkeyActivated = false;
 		} else if (a_event->type == SKSE::ActionEvent::Type::kEndSheathe) {
 			visible = false;
+			skseActivated = false;
 		}
 	}
 
@@ -491,18 +507,22 @@ DurabilityMenu::UI_MESSAGE_RESULTS DurabilityMenu::ProcessMessage(RE::UIMessage&
 // Update statement, time might be used later
 void DurabilityMenu::AdvanceMovie(float a_interval, std::uint32_t a_currentTime)
 {
-	auto currentTime = chrono_clock::now();
-	auto dt = (currentTime - _movieLastTime) / 1000000000.f;
+	// Hotkey Display Duration
+	if (hotkeyActivated) {
+		_current = chrono_clock::now();
+		auto fsec = (_current - _logged) / 1000000000.f;
+		float deltaTime = static_cast<float>(fsec.count());
 
-	_movieLastTime = currentTime;
-	float deltaTime = static_cast<float>(dt.count());
+		if (deltaTime >= ini.GetWidgetSettings("ToggleDuration")) {
+			hotkeyActivated = false;
+			visible = false;
+		}
+	}
 
+	//
 	if (++updateCount > 10) {
 		updateCount = 0;
 		UpdateMenu();
-		
-		if (uiMovie)
-			uiMovie->Advance(deltaTime);
 	}
 }
 
@@ -521,60 +541,56 @@ void DurabilityMenu::OnMenuOpen() {
 			logger::debug("Set root of loaded movie");
 		}
 
-		RE::UI *mm = RE::UI::GetSingleton();
-		mm->GetEventSource<RE::MenuOpenCloseEvent>()->AddEventSink(this);
+		RE::UI *ui = RE::UI::GetSingleton();
+		ui->GetEventSource<RE::MenuOpenCloseEvent>()->AddEventSink(this);
+
+		skseActivated = false;
+		hotkeyActivated = false;
 
 		if (ini.GetWidgetSettings("HideWithWeaponsSheathed") == 1) {
 			auto messaging = SKSE::GetMessagingInterface();
 			auto actionDispatch = (RE::BSTEventSource<SKSE::ActionEvent>*)messaging->GetEventDispatcher(SKSE::MessagingInterface::Dispatcher::kActionEvent);
 			actionDispatch->AddEventSink(this);
 
-			if (utility->GetPlayer()->AsActorState()->IsWeaponDrawn())
+			if (utility->GetPlayer()->AsActorState()->IsWeaponDrawn()) {
 				visible = true;
-			else
+				skseActivated = true;
+			} else {
 				visible = false;
-
-			logger::debug("SKSE Event Logged");
+				skseActivated = false;
+			}
 		}
 
 		ms_pSingleton = this;
 
-		if (ini.GetWidgetSettings("ToggleKeyCode") != 0) {
+		if (ini.GetWidgetSettings("ToggleKeyCode") != 0)
 			InputEventHandler::Register();
-			logger::debug("Keycode Event Logged");
-		}
 	}
 }
 
 // On close, kill the events and the singleton pointer
-void DurabilityMenu::OnMenuClose()
-{
+void DurabilityMenu::OnMenuClose() {
 	if (ms_pSingleton) {
 		ms_pSingleton = nullptr;
 
-		RE::UI *mm = RE::UI::GetSingleton();
-		mm->RemoveEventSink<RE::MenuOpenCloseEvent>(this);
+		RE::UI *ui = RE::UI::GetSingleton();
+		ui->RemoveEventSink<RE::MenuOpenCloseEvent>(this);
 
 		if (ini.GetWidgetSettings("HideWithWeaponsSheathed") == 1) {
 			auto messaging = SKSE::GetMessagingInterface();
 			auto actionDispatch = (RE::BSTEventSource<SKSE::ActionEvent>*)messaging->GetEventDispatcher(SKSE::MessagingInterface::Dispatcher::kActionEvent);
 			actionDispatch->RemoveEventSink(this);
-
-			logger::debug("SKSE Event Removed");
 		}
 
-		if (ini.GetWidgetSettings("ToggleKeyCode") != 0) {
+		if (ini.GetWidgetSettings("ToggleKeyCode") != 0)
 			InputEventHandler::Unregister();
-			logger::debug("Keycode Event Removed");
-		}
 	}
 
 	AutoOpenDurabilityMenuSink::Register();
 }
 
 // Update the SWF based on what the user currently has equipped
-void DurabilityMenu::UpdateMenu()
-{
+void DurabilityMenu::UpdateMenu() {
 	auto utility = Utility::GetSingleton();
 	if (!uiMovie || !uiMovie->GetVisible())
 		return;
