@@ -52,6 +52,10 @@ INIFile::INIFile() : EquipmentHealthThreshold(1.0f) {
 	temperMap["temperchance"] = 40;
 	temperMap["bosstemperchance"] = 80;
 
+	enchantMap["disabledynamicenchant"] = 0;
+	enchantMap["enchantchance"] = 40;
+	enchantMap["bossenchantchance"] = 80;
+
 	widgetMap["disablewidget"] = 0;
 	widgetMap["positionx"] = 3;
 	widgetMap["positiony"] = 73;
@@ -181,11 +185,16 @@ double INIFile::GetBreakChanceSettings(RE::TESForm* form) {
 	return GetBreakChanceSettings("DefaultArmor");
 }
 
-int INIFile::GetTemperSettings(std::string str)
-{
+int INIFile::GetTemperSettings(std::string str) {
 	std::string tmp = str;
 	ToLower(tmp);
 	return 	(temperMap.count(tmp) >= 1) ? temperMap.at(tmp) : 0;
+}
+
+int INIFile::GetEnchantSettings(std::string str) {
+	std::string tmp = str;
+	ToLower(tmp);
+	return 	(enchantMap.count(tmp) >= 1) ? enchantMap.at(tmp) : 0;
 }
 
 int INIFile::GetWidgetSettings(std::string str)
@@ -193,6 +202,81 @@ int INIFile::GetWidgetSettings(std::string str)
 	std::string tmp = str;
 	ToLower(tmp);
 	return 	(widgetMap.count(tmp) >= 1) ? widgetMap.at(tmp) : 0;
+}
+
+int INIFile::GetEnchantmentSize(std::string part) {
+	if (stricmp(part.c_str(),"weapon"))
+		return enchantWeapon.size();
+	else if (stricmp(part.c_str(),"head"))
+		return enchantHead.size();
+	else if (stricmp(part.c_str(),"body"))
+		return enchantBody.size();
+	else if (stricmp(part.c_str(),"hand"))
+		return enchantHand.size();
+	else if (stricmp(part.c_str(),"foot"))
+		return enchantFoot.size();
+	else if (stricmp(part.c_str(),"shield"))
+		return enchantShield.size();
+
+	return 0;
+}
+
+std::vector<Enchantments>* INIFile::GetEnchantmentList(std::string part) {
+	// Select correct vector based on part
+	if (stricmp(part.c_str(),"weapon"))
+		return &enchantWeapon;
+	else if (stricmp(part.c_str(),"head"))
+		return &enchantHead;
+	else if (stricmp(part.c_str(),"body"))
+		return &enchantBody;
+	else if (stricmp(part.c_str(),"hand"))
+		return &enchantHand;
+	else if (stricmp(part.c_str(),"foot"))
+		return &enchantFoot;
+	else if (stricmp(part.c_str(),"shield"))
+		return &enchantShield;
+
+	return nullptr;
+}
+
+RE::EnchantmentItem* INIFile::GetEnchantmentForm(std::string part, int index) {
+	Enchantments foundEnchant;
+
+	// Add the enchantment to the correct lists
+	if (stricmp(part.c_str(),"weapon"))
+		foundEnchant = enchantWeapon.at(index);
+	else if (stricmp(part.c_str(),"head"))
+		foundEnchant = enchantHead.at(index);
+	else if (stricmp(part.c_str(),"body"))
+		foundEnchant = enchantBody.at(index);
+	else if (stricmp(part.c_str(),"hand"))
+		foundEnchant = enchantHand.at(index);
+	else if (stricmp(part.c_str(),"foot"))
+		foundEnchant = enchantFoot.at(index);
+	else if (stricmp(part.c_str(),"shield"))
+		foundEnchant = enchantShield.at(index);
+
+	return foundEnchant.enchantment;
+}
+
+std::string INIFile::GetEnchantmentName(std::string part, int index) {
+	Enchantments foundEnchant;
+
+	// Add the enchantment to the correct lists
+	if (stricmp(part.c_str(),"weapon"))
+		foundEnchant = enchantWeapon.at(index);
+	else if (stricmp(part.c_str(),"head"))
+		foundEnchant = enchantHead.at(index);
+	else if (stricmp(part.c_str(),"body"))
+		foundEnchant = enchantBody.at(index);
+	else if (stricmp(part.c_str(),"hand"))
+		foundEnchant = enchantHand.at(index);
+	else if (stricmp(part.c_str(),"foot"))
+		foundEnchant = enchantFoot.at(index);
+	else if (stricmp(part.c_str(),"shield"))
+		foundEnchant = enchantShield.at(index);
+
+	return foundEnchant.name;
 }
 
 bool INIFile::HasNoBreakForms(int formid) {
@@ -224,6 +308,18 @@ bool INIFile::stricmp(const char* str_1, const char* str_2) {
 		return true;
 	else
 		return false;
+}
+
+std::vector<std::string> INIFile::split(std::string str, char delim) {
+	std::stringstream test(str);
+	std::string segment;
+	std::vector<std::string> seglist;
+
+	while(std::getline(test, segment, delim)) {
+	   seglist.push_back(segment);
+	}
+
+	return seglist;
 }
 
 void INIFile::SetSettings() {
@@ -260,7 +356,7 @@ void INIFile::SetSettings() {
 
 	// Enchantment Forms
 	std::vector<std::string> configs{};
-	std::string sfilename = "_ENCH_";
+	std::string sfilename = "_ENCH";
 
 	for (const auto iterator = std::filesystem::directory_iterator(enchant_path); const auto& entry : iterator) {
 		if (entry.exists()) {
@@ -274,11 +370,11 @@ void INIFile::SetSettings() {
 	std::ranges::sort(configs);
 
 	if (configs.empty()) {
-		logger::debug("No .ini files with _SWAP suffix were found within the Data folder, aborting...");
+		logger::debug("No .ini files with _ENCH suffix were found within the Data folder, aborting...");
 		return;
 	}
 
-	logger::info("{} matching inis found", configs.size());
+	logger::info("{} matching files found", configs.size());
 	for (auto& path : configs) {
 		logger::info("Enchant File : {}", path);
 
@@ -296,14 +392,8 @@ void INIFile::SetSettings() {
 		iniEnch.GetAllSections(sections);
 		sections.sort(CSimpleIniA::Entry::LoadOrder());
 
-		constexpr auto push_filter = [](const std::string& a_condition, std::vector<FormIDStr>& a_processedFilters) {
-			if (const auto processedID = SwapData::GetFormID(a_condition); processedID != 0) {
-				a_processedFilters.emplace_back(processedID);
-			} else {
-				logger::error("\t\tFilter  [{}] INFO - unable to find form, treating filter as string", a_condition);
-				a_processedFilters.emplace_back(a_condition);
-			}
-		};
+		std::wstring path_w = std::wstring(path.begin(), path.end());
+		SetINIData3(&sectionList, path_w.c_str());
 	}
 
 }
@@ -330,6 +420,8 @@ void INIFile::SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* secti
 				degradationMap.at(key) = iValue;
 			} else if (stricmp(str.pItem,"disabledynamictemper")) {
 				temperMap.at(key) = iValue;
+			} else if (stricmp(str.pItem,"disabledynamicenchant")) {
+				enchantMap.at(key) = iValue;
 			} else if (stricmp(str.pItem,"disablewidget") || stricmp(str.pItem,"hidepoisonname") || stricmp(str.pItem,"hidewithweaponssheathed")) {
 				widgetMap.at(key) = iValue;
 			} else {
@@ -348,6 +440,8 @@ void INIFile::SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* secti
 					degradationMap.at(key) = iValue;
 				} else if (stricmp(str.pItem,"temperchance") || stricmp(str.pItem,"bosstemperchance")) {
 					temperMap.at(key) = iValue;
+				} else if (stricmp(str.pItem,"enchantchance") || stricmp(str.pItem,"bossenchantchance")) {
+					enchantMap.at(key) = iValue;
 				} else if (stricmp(str.pItem,"scale")|| stricmp(str.pItem,"togglekeycode") || stricmp(str.pItem,"flags") || stricmp(str.pItem,"toggleDuration")) {
 					widgetMap.at(key) = iValue;
 				} else if (stricmp(str.pItem,"positionx") || stricmp(str.pItem,"positiony")) {
@@ -431,6 +525,53 @@ void INIFile::SetINIData2(std::list<CSimpleIniA::Entry> *list, std::unordered_se
 	}
 }
 
+void INIFile::SetINIData3(std::list<CSimpleIniA::Entry> *list, const wchar_t* filename) {
+	CSimpleIniA iniEnch;
+	iniEnch.SetUnicode();
+	iniEnch.LoadFile(filename);
+
+	const auto dataHandler = RE::TESDataHandler::GetSingleton();
+	for (CSimpleIniA::Entry strESP : *list) {
+		std::string esp(strESP.pItem);
+		auto index = RE::TESDataHandler::GetSingleton()->GetModIndex(esp);
+		
+		if (index.value() != 0xFF) {
+			std::list<CSimpleIniA::Entry> entryList;
+			iniEnch.GetAllKeys(esp.c_str(), entryList);
+
+			for (CSimpleIniA::Entry str : entryList) {
+				std::vector<std::string> split_value = split(iniEnch.GetValue(strESP.pItem, str.pItem),'|');
+				std::string part = split_value.at(0);
+				std::string name = split_value.at(1);
+				ToLower(part);
+
+				// Look for the item
+				uint32_t form = std::stoi(str.pItem, nullptr, 0);
+				RE::EnchantmentItem* newItem = dataHandler->LookupForm(RE::FormID(form), esp)->As<RE::EnchantmentItem>();
+
+				// Set our enchantment values
+				Enchantments newEnch;
+				newEnch.enchantment = newItem;
+				newEnch.name = name;
+
+				// Add the enchantment to the correct lists
+				if (part.rfind("weapon") != std::string::npos)
+					enchantWeapon.push_back(newEnch);
+				if (part.rfind("head") != std::string::npos)
+					enchantHead.push_back(newEnch);
+				if (part.rfind("body") != std::string::npos)
+					enchantBody.push_back(newEnch);
+				if (part.rfind("hand") != std::string::npos)
+					enchantHand.push_back(newEnch);
+				if (part.rfind("foot") != std::string::npos)
+					enchantFoot.push_back(newEnch);
+				if (part.rfind("shield") != std::string::npos)
+					enchantShield.push_back(newEnch);
+			}
+		}
+	}
+}
+
 void INIFile::ShowSettings() {
 	logger::debug("Degradation");
 	for (auto& map : degradationMap) {
@@ -452,8 +593,20 @@ void INIFile::ShowSettings() {
 		logger::debug("   {} = {}", map.first, map.second);
 	}
 
+	logger::debug("DynamicEnchant");
+	for (auto& map : enchantMap) {
+		logger::debug("   {} = {}", map.first, map.second);
+	}
+
 	logger::debug("Widget");
 	for (auto& map : widgetMap) {
 		logger::debug("   {} = {}", map.first, map.second);
 	}
+
+	logger::debug("Loaded {} weapon enchantments", enchantWeapon.size());
+	logger::debug("Loaded {} head enchantments", enchantHead.size());
+	logger::debug("Loaded {} body enchantments", enchantBody.size());
+	logger::debug("Loaded {} hand enchantments", enchantHand.size());
+	logger::debug("Loaded {} foot enchantments", enchantFoot.size());
+	logger::debug("Loaded {} shield enchantments", enchantShield.size());
 }

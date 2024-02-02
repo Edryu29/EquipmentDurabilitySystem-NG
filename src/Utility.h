@@ -41,11 +41,11 @@ public:
         return singleton->get();
     }
 
-    static void ShowNotification(std::string msg, bool messageBox = false) {
+    static void ShowNotification(std::string msg, bool messageBox = false, const char* a_soundToPlay = 0) {
         if (messageBox) {
             RE::DebugMessageBox(msg.c_str());
         } else {
-            RE::DebugNotification(msg.c_str());
+            RE::DebugNotification(msg.c_str(), a_soundToPlay);
         }
     }
 

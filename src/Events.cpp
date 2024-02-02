@@ -274,11 +274,11 @@ static void GetCloseEquipment(std::set<RE::TESObjectREFR*> *containerlist, std::
 	if (TES) {
 		static double fRadiusSquare = std::pow(7000, 2.0);
 		TES->ForEachReferenceInRange(utility->GetPlayer(), fRadiusSquare, [&](RE::TESObjectREFR& b_ref) {
-			if (!b_ref.IsDisabled()) {
+			if (!b_ref.IsDisabled() && !b_ref.IsPlayerRef() && !b_ref.IsPlayer()) {
 				RE::TESObjectREFR* newRef = &b_ref;
 				if (b_ref.formType == RE::FormType::ActorCharacter || b_ref.GetBaseObject()->formType == RE::FormType::Container) {
 					containerlist->insert(newRef);
-				} else if (b_ref.GetBaseObject()->formType == RE::FormType::Armor|| b_ref.GetBaseObject()->formType == RE::FormType::Weapon) {
+				} else if (b_ref.GetBaseObject()->IsArmor()|| b_ref.GetBaseObject()->IsWeapon()) {
 					equipmentlist->insert(newRef);
 				}
 			}
@@ -288,191 +288,140 @@ static void GetCloseEquipment(std::set<RE::TESObjectREFR*> *containerlist, std::
 }
 
 // Apply a temper on items that meet the requirements and hit the temper chance
-static void DynamicTemper() {
+static void DynamicTemperEnchant() {
 	auto utility = Utility::GetSingleton();
+	auto TES = RE::TES::GetSingleton();
+
+	// Get nearby Equipment and Containers
 	std::set<RE::TESObjectREFR*> containerlist;
 	std::set<RE::TESObjectREFR*> equipmentlist;
-
 	GetCloseEquipment(&containerlist, &equipmentlist);
 
+	// Loop through equipment list
 	if (!equipmentlist.empty()) {
 		for (auto& ref : equipmentlist) {
 			if (!ref || !ref->GetBaseObject())
 				continue;
 
+			// Get Equipment
 			FoundEquipData eqD(ref->GetBaseObject());
-			if (!eqD.CanTemper() || ref->extraList.HasType((RE::ExtraDataType::kHealth)))
-				continue;
 
-			eqD.pExtraData = &ref->extraList;
-			int level = 0;
-			RE::TESForm* owner = ref->GetOwner();
-			if (owner && owner->formID != 0x000007)
-				level = utility->GetPlayer()->GetLevel();
+			// Process record only if Extra Data doesnt have additional health
+			if (!ref->extraList.HasType(RE::ExtraDataType::kHealth) && eqD.CanTemper()) {
 
-			if (level != 0 && eqD.CanBreak() && Probability(ini.GetTemperSettings("TemperChance"))) {
-				eqD.SetItemHealthPercent(GetRandom(10001.0, 10001.0 + (level + 10) * 100));
-			} else {
-				eqD.SetItemHealthPercent(1.0f);
+				// Set level variable
+				int level = 0;
+				RE::TESForm* owner = ref->GetOwner();
+				if (owner&& !owner->IsPlayer() && !owner->IsPlayerRef())
+					level = utility->GetPlayer()->GetLevel();
+
+				// Set extra data
+				eqD.pExtraData = &ref->extraList;
+
+				// Temper
+				if (ini.GetTemperSettings("DisableDynamicTemper") == 0 && eqD.CanBreak()) {
+					if (level != 0 && Probability(ini.GetTemperSettings("TemperChance")))
+						eqD.SetItemHealthPercent(GetRandom(10001.0, 10001.0 + (level + 10) * 100));
+				}
+
+				// Enchant
+				if (ini.GetEnchantSettings("DisableDynamicEnchant") == 0 && !eqD.IsEnchanted()) {
+					if (level != 0 && Probability(ini.GetEnchantSettings("EnchantChance")))
+						eqD.SetItemEnchantment(level);
+				}
+
+				// Temper the item at normal health so we dont reprocess
+				if (!eqD.IsTempered())
+					eqD.SetItemHealthPercent(1.0f);
+			
 			}
 		}
 	}
 
+	// Loop through container list
 	if (!containerlist.empty()) {
 		for (auto& ref : containerlist) {
-			if (!ref)
+			if (!ref || ref->IsPlayerRef() || ref->IsPlayer())
 				continue;
 
+			// Get Container Inventory Changes
 			RE::InventoryChanges *exChanges =  ref->GetInventoryChanges();
 
+			// If there are no changes, or not list, exit
 			if (!exChanges || !exChanges->entryList)
 				continue;
 
-			for (const auto& pEntry : *exChanges->entryList)
-			{
+			// Loop through all items in list
+			for (const auto& pEntry : *exChanges->entryList) {
 				if (!pEntry || !pEntry->extraLists)
 					continue;
 
 				FoundEquipData eqD(pEntry->GetObject());
 
+				// If item cannot be tempered
 				if (!eqD.CanTemper())
 					continue;
 
-				for (const auto& pExtraDataList : *pEntry->extraLists)
-				{
+				// Find health data on item
+				for (const auto& pExtraDataList : *pEntry->extraLists) {
 					if (!pExtraDataList)
 						continue;
 
-					if (!pExtraDataList->HasType(RE::ExtraDataType::kHealth)) {
+					// Tempered Health
+					if (!pExtraDataList->HasType(RE::ExtraDataType::kHealth))
 						eqD.pExtraData = pExtraDataList;
-					}
+
+					// Enchantment
+					if (!pExtraDataList->HasType(RE::ExtraDataType::kEnchantment))
+						eqD.pExtraData = pExtraDataList;
 
 					break;
 				}
 
-				if (!eqD.pExtraData)
+				// If extra data of health was found, exit
+				if (eqD.pExtraData && eqD.pExtraData->HasType(RE::ExtraDataType::kHealth))
 					continue;
 
+				// Get either the actors level, or use the players level to determine strength
 				int level = 0;
 				if (ref->formType == RE::FormType::ActorCharacter) {
 					RE::Actor* actor = ref->As<RE::Actor>();
 					if (actor != utility->GetPlayer() && !actor->IsInFaction(utility->factionFollower1) && !actor->IsInFaction(utility->factionFollower2))
 						level = actor->GetLevel();
-				} else {
+				} else
 					level = utility->GetPlayer()->GetLevel();
-				}
 
+				// If the item can break, and player/character level is not 0. Set health regardless so item wont be processed again
 				if (level != 0 && eqD.CanBreak()) {
 
-					int chance = ini.GetTemperSettings("TemperChance");
-					RE::ExtraLocationRefType * xRefType = static_cast<RE::ExtraLocationRefType*>(ref->extraList.GetByType(RE::ExtraDataType::kLocationRefType));
-					if (xRefType && (xRefType->locRefType == utility->locationBoss || xRefType->locRefType == utility->locationBossContainer))
-						chance = ini.GetTemperSettings("BossTemperChance");
+					// Temper
+					if (ini.GetTemperSettings("DisableDynamicTemper") == 0) {
+						int chanceTemper = ini.GetTemperSettings("TemperChance");
+						RE::ExtraLocationRefType * xRefType = static_cast<RE::ExtraLocationRefType*>(ref->extraList.GetByType(RE::ExtraDataType::kLocationRefType));
+						if (xRefType && (xRefType->locRefType == utility->locationBoss || xRefType->locRefType == utility->locationBossContainer))
+							chanceTemper = ini.GetTemperSettings("BossTemperChance");
 
-					if (Probability(chance)) {
-						eqD.SetItemHealthPercent(GetRandom(10001.0, 10001.0 + (level + 10) * 100));
-					} else {
+						if (Probability(chanceTemper))
+							eqD.SetItemHealthPercent(GetRandom(10001.0, 10001.0 + (level + 10) * 100));
+					}
+
+					// Enchant
+					if (!eqD.IsEnchanted() && ini.GetEnchantSettings("DisableDynamicEnchant") == 0) {
+						int chanceEnchant = ini.GetEnchantSettings("EnchantChance");
+						RE::ExtraLocationRefType * xRefType = static_cast<RE::ExtraLocationRefType*>(ref->extraList.GetByType(RE::ExtraDataType::kLocationRefType));
+						if (xRefType && (xRefType->locRefType == utility->locationBoss || xRefType->locRefType == utility->locationBossContainer))
+							chanceEnchant = ini.GetEnchantSettings("BossEnchantChance");
+
+						if (Probability(chanceEnchant))
+							eqD.SetItemEnchantment(level);
+					}
+
+					// Temper the item at normal health so we dont reprocess
+					if (!eqD.IsTempered())
 						eqD.SetItemHealthPercent(1.0f);
-					}
-				} else {
+					
+				} else
 					eqD.SetItemHealthPercent(1.0f);
-				}
-			}
-		}
-	}
-}
-
-// Apply a temper on items that meet the requirements and hit the temper chance
-static void DynamicEnchant() {
-	auto utility = Utility::GetSingleton();
-	std::set<RE::TESObjectREFR*> containerlist;
-	std::set<RE::TESObjectREFR*> equipmentlist;
-
-	GetCloseEquipment(&containerlist, &equipmentlist);
-
-	if (!equipmentlist.empty()) {
-		for (auto& ref : equipmentlist) {
-			if (!ref || !ref->GetBaseObject())
-				continue;
-
-			FoundEquipData eqD(ref->GetBaseObject());
-			if (!eqD.CanEnchant())
-				continue;
-
-			eqD.pExtraData = &ref->extraList;
-			int level = 0;
-			RE::TESForm* owner = ref->GetOwner();
-			if (owner && owner->formID != 0x000007)
-				level = utility->GetPlayer()->GetLevel();
-
-			// Need to fix
-			if (level != 0 && Probability(ini.GetTemperSettings("EnchantChance"))) {
-				eqD.SetItemHealthPercent(GetRandom(10001.0, 10001.0 + (level + 10) * 100));
-			} else {
-				eqD.SetItemHealthPercent(1.0f);
-			}
-		}
-	}
-
-	if (!containerlist.empty()) {
-		for (auto& ref : containerlist) {
-			if (!ref)
-				continue;
-
-			RE::InventoryChanges *exChanges =  ref->GetInventoryChanges();
-
-			if (!exChanges || !exChanges->entryList)
-				continue;
-
-			for (const auto& pEntry : *exChanges->entryList)
-			{
-				if (!pEntry || !pEntry->extraLists)
-					continue;
-
-				FoundEquipData eqD(pEntry->GetObject());
-
-				if (!eqD.CanEnchant())
-					continue;
-
-				for (const auto& pExtraDataList : *pEntry->extraLists)
-				{
-					if (!pExtraDataList)
-						continue;
-
-					if (!pExtraDataList->HasType(RE::ExtraDataType::kHealth)) {
-						eqD.pExtraData = pExtraDataList;
-					}
-
-					break;
-				}
-
-				if (!eqD.pExtraData)
-					continue;
-
-				int level = 0;
-				if (ref->formType == RE::FormType::ActorCharacter) {
-					RE::Actor* actor = ref->As<RE::Actor>();
-					if (actor != utility->GetPlayer() && !actor->IsInFaction(utility->factionFollower1) && !actor->IsInFaction(utility->factionFollower2))
-						level = actor->GetLevel();
-				} else {
-					level = utility->GetPlayer()->GetLevel();
-				}
-
-				if (level != 0 && eqD.CanBreak()) {
-
-					int chance = ini.GetTemperSettings("TemperChance");
-					RE::ExtraLocationRefType * xRefType = static_cast<RE::ExtraLocationRefType*>(ref->extraList.GetByType(RE::ExtraDataType::kLocationRefType));
-					if (xRefType && (xRefType->locRefType == utility->locationBoss || xRefType->locRefType == utility->locationBossContainer))
-						chance = ini.GetTemperSettings("BossTemperChance");
-
-					if (Probability(chance)) {
-						eqD.SetItemHealthPercent(GetRandom(10001.0, 10001.0 + (level + 10) * 100));
-					} else {
-						eqD.SetItemHealthPercent(1.0f);
-					}
-				} else {
-					eqD.SetItemHealthPercent(1.0f);
-				}
 			}
 		}
 	}
@@ -487,8 +436,8 @@ static std::int32_t OnUpdate() {
 		if (g_deltaTime > 0) {
 			lastTime += g_deltaTime;
 			if (lastTime >= 1.0f) {
-				if (ini.GetTemperSettings("DisableDynamicTemper") == 0)
-					DynamicTemper();
+				if (ini.GetTemperSettings("DisableDynamicTemper") == 0 || ini.GetEnchantSettings("DisableDynamicEnchant") == 0)
+					DynamicTemperEnchant();
 				lastTime = 0;
 			}
 		}
@@ -506,7 +455,7 @@ namespace Events {
 			HitEventHandler::Register();
 		}
 
-		if (ini.GetDegradationSettings("DisableDegradation") == 0 || ini.GetTemperSettings("DisableDynamicTemper") == 0) {
+		if (ini.GetTemperSettings("DisableDynamicTemper") == 0 || ini.GetEnchantSettings("DisableDynamicEnchant") == 0) {
 			auto& trampoline = SKSE::GetTrampoline();
 			_OnUpdate = trampoline.write_call<5>(On_Update_Hook.address(), OnUpdate);
 			logger::info("Installed update hook");
