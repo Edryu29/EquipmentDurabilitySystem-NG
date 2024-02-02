@@ -89,7 +89,7 @@ static void RemoveEquipment(FoundEquipData eqD, RE::Actor* actor) {
 	if (actor == utility->GetPlayer()) {
 		eqD.GenerateName();
 		auto msg = std::format("Your {} has broken", eqD.pForm->GetName());
-		utility->ShowNotification(msg,false);
+		utility->ShowNotification(msg,false,"VOCShoutImpactDisarm");
 	}
 	actor->RemoveItem(eqD.pForm->As<RE::TESBoundObject>(), 1, RE::ITEM_REMOVE_REASON::kRemove, eqD.pExtraData, nullptr, 0, 0);
 	actor->Update(0);
