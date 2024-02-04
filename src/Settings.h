@@ -29,6 +29,8 @@ public:
 	RE::EnchantmentItem* GetEnchantmentForm(std::string part, int index);
 	std::string GetEnchantmentName(std::string part, int index);
 
+	bool IsVendorContainer(RE::TESObjectREFR* form);
+
 	bool HasNoBreakForms(int formid);
 
 	float EquipmentHealthThreshold;
@@ -37,6 +39,8 @@ private:
 	void ToLower(std::string &str);
 	bool stricmp(const char* str_1, const char* str_2);
 	std::vector<std::string> split(std::string str, char delim);
+
+	void SetVendorList();
 
 	void SetSettings();
 	void SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* section);
@@ -62,7 +66,10 @@ private:
 	std::vector<Enchantments> enchantHead;
 	std::vector<Enchantments> enchantHand;
 	std::vector<Enchantments> enchantFoot;
-	std::vector<Enchantments> enchantShield; 
+	std::vector<Enchantments> enchantShield;
+
+	// Vendor Chest
+	std::vector<RE::TESObjectREFR*> vendorContainers;
 };
 
 extern INIFile ini;

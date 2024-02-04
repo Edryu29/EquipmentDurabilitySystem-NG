@@ -74,11 +74,36 @@ INIFile::INIFile() : EquipmentHealthThreshold(1.0f) {
 void INIFile::Load() {
 	SetSettings();
 	ShowSettings();
+	SetVendorList();
 
 	if (degradationMap["equipmenthealththreshold"] == 0)
 		EquipmentHealthThreshold = 1.0f;
 	else
 		EquipmentHealthThreshold = degradationMap["equipmenthealththreshold"] * 0.001f + 1.0f;
+}
+
+void INIFile::SetVendorList() {
+	// Get all factions
+	auto factionList = RE::TESDataHandler::GetSingleton()->GetFormArray(RE::FormType::Faction);
+
+	// Loop through all found factions
+	for (auto faction : factionList) {
+		RE::TESFaction* foundFaction = faction->As<RE::TESFaction>();
+
+		if (foundFaction->IsVendor() && foundFaction->vendorData.merchantContainer)
+			if (!(std::find(vendorContainers.begin(), vendorContainers.end(), foundFaction->vendorData.merchantContainer) != vendorContainers.end())) {
+				vendorContainers.push_back(foundFaction->vendorData.merchantContainer);
+			}
+	}
+
+	logger::debug("Vendor Containers Found: {}", vendorContainers.size());
+}
+
+bool INIFile::IsVendorContainer(RE::TESObjectREFR* form) {
+	if (std::find(vendorContainers.begin(), vendorContainers.end(), form) != vendorContainers.end())
+		return true;
+	else
+		return false;
 }
 
 int INIFile::GetDegradationSettings(std::string str) {

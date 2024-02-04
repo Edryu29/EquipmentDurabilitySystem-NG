@@ -66,12 +66,6 @@ public:
         utility->factionFollower1 = dataHandler->LookupForm(RE::FormID(0x05C84D), pluginSkyrim)->As<RE::TESFaction>();
         utility->factionFollower2 = dataHandler->LookupForm(RE::FormID(0x09A7B2), pluginSkyrim)->As<RE::TESFaction>();
 
-        // Vendor Factions
-        utility->factionBlacksmith = dataHandler->LookupForm(RE::FormID(0x05091D), pluginSkyrim)->As<RE::TESFaction>();
-        utility->factionMerchant = dataHandler->LookupForm(RE::FormID(0x051596), pluginSkyrim)->As<RE::TESFaction>();
-        utility->factionFence = dataHandler->LookupForm(RE::FormID(0x0806AA), pluginSkyrim)->As<RE::TESFaction>();
-        utility->factionFletcher = dataHandler->LookupForm(RE::FormID(0x051592), pluginSkyrim)->As<RE::TESFaction>();
-
         // Locations
         utility->locationBoss = dataHandler->LookupForm(RE::FormID(0x0130F7), pluginSkyrim)->As<RE::BGSLocationRefType>();
         utility->locationBossContainer = dataHandler->LookupForm(RE::FormID(0x0130F8), pluginSkyrim)->As<RE::BGSLocationRefType>();

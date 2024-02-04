@@ -346,7 +346,6 @@ static void DynamicTemperEnchant() {
 
 			// Get Container Inventory Changes and the owner of the container
 			RE::InventoryChanges *exChanges =  ref->GetInventoryChanges();
-			RE::Actor* refActor = ref->GetOwner()->As<RE::Actor>();
 
 			// If there are no changes, or not list, exit
 			if (!exChanges || !exChanges->entryList)
@@ -401,7 +400,7 @@ static void DynamicTemperEnchant() {
 					// Temper
 					if (ini.GetTemperSettings("DisableDynamicTemper") == 0) {
 						int chanceTemper = ini.GetTemperSettings("TemperChance");
-						if (refActor && refActor->CanOfferServices())
+						if (ref->GetBaseObject()->formType == RE::FormType::Container && ini.IsVendorContainer(ref))
 							chanceTemper = ini.GetEnchantSettings("VendorTemperChance");
 						else if (xRefType && (xRefType->locRefType == utility->locationBoss || xRefType->locRefType == utility->locationBossContainer))
 							chanceTemper = ini.GetTemperSettings("BossTemperChance");
@@ -413,7 +412,7 @@ static void DynamicTemperEnchant() {
 					// Enchant
 					if (!eqD.IsEnchanted() && ini.GetEnchantSettings("DisableDynamicEnchant") == 0) {
 						int chanceEnchant = ini.GetEnchantSettings("EnchantChance");
-						if (refActor && refActor->CanOfferServices())
+						if (ref->GetBaseObject()->formType == RE::FormType::Container && ini.IsVendorContainer(ref))
 							chanceEnchant = ini.GetEnchantSettings("VendorEnchantChance");
 						else if (xRefType && (xRefType->locRefType == utility->locationBoss || xRefType->locRefType == utility->locationBossContainer))
 							chanceEnchant = ini.GetEnchantSettings("BossEnchantChance");
