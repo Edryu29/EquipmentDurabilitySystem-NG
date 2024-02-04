@@ -11,6 +11,11 @@ public:
     RE::TESFaction* factionFollower1;
     RE::TESFaction* factionFollower2;
 
+    RE::TESFaction* factionBlacksmith;
+    RE::TESFaction* factionMerchant;
+    RE::TESFaction* factionFence;
+    RE::TESFaction* factionFletcher;
+
     RE::BGSLocationRefType* locationBoss;
     RE::BGSLocationRefType* locationBossContainer;
 

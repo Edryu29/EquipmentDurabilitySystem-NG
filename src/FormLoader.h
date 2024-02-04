@@ -5,10 +5,10 @@
 
 class FormLoader {
 public:
-    const std::string_view skyrimPluginName = "Skyrim.esm";
-    const std::string_view updatePluginName = "Update.esm";
-    const std::string_view dgPluginName = "Dawnguard.esm";
-    const std::string_view hfPluginName = "HearthFires.esm";
+    const std::string_view pluginSkyrim = "Skyrim.esm";
+    const std::string_view pluginUpdate = "Update.esm";
+    const std::string_view pluginDawnguard = "Dawnguard.esm";
+    const std::string_view pluginHeathfire = "HearthFires.esm";
 
     static FormLoader* GetSingleton() {
         static FormLoader formLoader;
@@ -57,18 +57,24 @@ public:
         auto utility = Utility::GetSingleton();
 
         // Keywords
-        utility->keywordWarhammer = dataHandler->LookupForm(RE::FormID(0x06D930), skyrimPluginName)->As<RE::BGSKeyword>();
-        utility->keywordClothing = dataHandler->LookupForm(RE::FormID(0x08F95B), skyrimPluginName)->As<RE::BGSKeyword>();
-        utility->keywordJewelry = dataHandler->LookupForm(RE::FormID(0x08F95A), skyrimPluginName)->As<RE::BGSKeyword>();
-        utility->keywordMagicDisallow = dataHandler->LookupForm(RE::FormID(0x0C27BD), skyrimPluginName)->As<RE::BGSKeyword>();
+        utility->keywordWarhammer = dataHandler->LookupForm(RE::FormID(0x06D930), pluginSkyrim)->As<RE::BGSKeyword>();
+        utility->keywordClothing = dataHandler->LookupForm(RE::FormID(0x08F95B), pluginSkyrim)->As<RE::BGSKeyword>();
+        utility->keywordJewelry = dataHandler->LookupForm(RE::FormID(0x08F95A), pluginSkyrim)->As<RE::BGSKeyword>();
+        utility->keywordMagicDisallow = dataHandler->LookupForm(RE::FormID(0x0C27BD), pluginSkyrim)->As<RE::BGSKeyword>();
 
         // Follower Factions
-        utility->factionFollower1 = dataHandler->LookupForm(RE::FormID(0x05C84D), skyrimPluginName)->As<RE::TESFaction>();
-        utility->factionFollower2 = dataHandler->LookupForm(RE::FormID(0x09A7B2), skyrimPluginName)->As<RE::TESFaction>();
+        utility->factionFollower1 = dataHandler->LookupForm(RE::FormID(0x05C84D), pluginSkyrim)->As<RE::TESFaction>();
+        utility->factionFollower2 = dataHandler->LookupForm(RE::FormID(0x09A7B2), pluginSkyrim)->As<RE::TESFaction>();
+
+        // Vendor Factions
+        utility->factionBlacksmith = dataHandler->LookupForm(RE::FormID(0x05091D), pluginSkyrim)->As<RE::TESFaction>();
+        utility->factionMerchant = dataHandler->LookupForm(RE::FormID(0x051596), pluginSkyrim)->As<RE::TESFaction>();
+        utility->factionFence = dataHandler->LookupForm(RE::FormID(0x0806AA), pluginSkyrim)->As<RE::TESFaction>();
+        utility->factionFletcher = dataHandler->LookupForm(RE::FormID(0x051592), pluginSkyrim)->As<RE::TESFaction>();
 
         // Locations
-        utility->locationBoss = dataHandler->LookupForm(RE::FormID(0x0130F7), skyrimPluginName)->As<RE::BGSLocationRefType>();
-        utility->locationBossContainer = dataHandler->LookupForm(RE::FormID(0x0130F8), skyrimPluginName)->As<RE::BGSLocationRefType>();
+        utility->locationBoss = dataHandler->LookupForm(RE::FormID(0x0130F7), pluginSkyrim)->As<RE::BGSLocationRefType>();
+        utility->locationBossContainer = dataHandler->LookupForm(RE::FormID(0x0130F8), pluginSkyrim)->As<RE::BGSLocationRefType>();
     }
 
     // Cache commonly called addresses to avoid address lib overhead

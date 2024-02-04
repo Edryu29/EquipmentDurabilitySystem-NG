@@ -50,11 +50,13 @@ INIFile::INIFile() : EquipmentHealthThreshold(1.0f) {
 
 	temperMap["disabledynamictemper"] = 0;
 	temperMap["temperchance"] = 40;
+	temperMap["vendortemperchance"] = 50;
 	temperMap["bosstemperchance"] = 80;
 
 	enchantMap["disabledynamicenchant"] = 0;
-	enchantMap["enchantchance"] = 40;
-	enchantMap["bossenchantchance"] = 80;
+	enchantMap["enchantchance"] = 20;
+	enchantMap["vendorenchantchance"] = 30;
+	enchantMap["bossenchantchance"] = 60;
 
 	widgetMap["disablewidget"] = 0;
 	widgetMap["positionx"] = 3;
@@ -438,9 +440,9 @@ void INIFile::SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* secti
 
 				if (stricmp(str.pItem,"equipmenthealththreshold")) {
 					degradationMap.at(key) = iValue;
-				} else if (stricmp(str.pItem,"temperchance") || stricmp(str.pItem,"bosstemperchance")) {
+				} else if (stricmp(str.pItem,"temperchance") || stricmp(str.pItem,"vendortemperchance") || stricmp(str.pItem,"bosstemperchance")) {
 					temperMap.at(key) = iValue;
-				} else if (stricmp(str.pItem,"enchantchance") || stricmp(str.pItem,"bossenchantchance")) {
+				} else if (stricmp(str.pItem,"enchantchance") || stricmp(str.pItem,"vendortemperchance")|| stricmp(str.pItem,"bossenchantchance")) {
 					enchantMap.at(key) = iValue;
 				} else if (stricmp(str.pItem,"scale")|| stricmp(str.pItem,"togglekeycode") || stricmp(str.pItem,"flags") || stricmp(str.pItem,"toggleDuration")) {
 					widgetMap.at(key) = iValue;
@@ -535,7 +537,7 @@ void INIFile::SetINIData3(std::list<CSimpleIniA::Entry> *list, const wchar_t* fi
 		std::string esp(strESP.pItem);
 		auto index = RE::TESDataHandler::GetSingleton()->GetModIndex(esp);
 		
-		if (index.value() != 0xFF) {
+		if (index && index.value() != 0xFF) {
 			std::list<CSimpleIniA::Entry> entryList;
 			iniEnch.GetAllKeys(esp.c_str(), entryList);
 

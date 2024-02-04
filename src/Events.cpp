@@ -344,8 +344,9 @@ static void DynamicTemperEnchant() {
 			if (!ref || ref->IsPlayerRef() || ref->IsPlayer())
 				continue;
 
-			// Get Container Inventory Changes
+			// Get Container Inventory Changes and the owner of the container
 			RE::InventoryChanges *exChanges =  ref->GetInventoryChanges();
+			RE::Actor* refActor = ref->GetOwner()->As<RE::Actor>();
 
 			// If there are no changes, or not list, exit
 			if (!exChanges || !exChanges->entryList)
@@ -394,11 +395,15 @@ static void DynamicTemperEnchant() {
 				// If the item can break, and player/character level is not 0. Set health regardless so item wont be processed again
 				if (level != 0 && eqD.CanBreak()) {
 
+					// Get Location Type
+					RE::ExtraLocationRefType * xRefType = static_cast<RE::ExtraLocationRefType*>(ref->extraList.GetByType(RE::ExtraDataType::kLocationRefType));
+
 					// Temper
 					if (ini.GetTemperSettings("DisableDynamicTemper") == 0) {
 						int chanceTemper = ini.GetTemperSettings("TemperChance");
-						RE::ExtraLocationRefType * xRefType = static_cast<RE::ExtraLocationRefType*>(ref->extraList.GetByType(RE::ExtraDataType::kLocationRefType));
-						if (xRefType && (xRefType->locRefType == utility->locationBoss || xRefType->locRefType == utility->locationBossContainer))
+						if (refActor && refActor->CanOfferServices())
+							chanceTemper = ini.GetEnchantSettings("VendorTemperChance");
+						else if (xRefType && (xRefType->locRefType == utility->locationBoss || xRefType->locRefType == utility->locationBossContainer))
 							chanceTemper = ini.GetTemperSettings("BossTemperChance");
 
 						if (Probability(chanceTemper))
@@ -408,8 +413,9 @@ static void DynamicTemperEnchant() {
 					// Enchant
 					if (!eqD.IsEnchanted() && ini.GetEnchantSettings("DisableDynamicEnchant") == 0) {
 						int chanceEnchant = ini.GetEnchantSettings("EnchantChance");
-						RE::ExtraLocationRefType * xRefType = static_cast<RE::ExtraLocationRefType*>(ref->extraList.GetByType(RE::ExtraDataType::kLocationRefType));
-						if (xRefType && (xRefType->locRefType == utility->locationBoss || xRefType->locRefType == utility->locationBossContainer))
+						if (refActor && refActor->CanOfferServices())
+							chanceEnchant = ini.GetEnchantSettings("VendorEnchantChance");
+						else if (xRefType && (xRefType->locRefType == utility->locationBoss || xRefType->locRefType == utility->locationBossContainer))
 							chanceEnchant = ini.GetEnchantSettings("BossEnchantChance");
 
 						if (Probability(chanceEnchant))
