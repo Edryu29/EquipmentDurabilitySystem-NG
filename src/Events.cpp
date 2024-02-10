@@ -273,7 +273,7 @@ static void GetCloseEquipment(std::set<RE::TESObjectREFR*> *containerlist, std::
 
 	if (TES) {
 		static double fRadiusSquare = std::pow(7000, 2.0);
-		TES->ForEachReferenceInRange(utility->GetPlayer(), fRadiusSquare, [&](RE::TESObjectREFR& b_ref) {
+        utility->ForEachReferenceInRange(utility->GetPlayer(), fRadiusSquare, [&](RE::TESObjectREFR& b_ref) {
 			if (!b_ref.IsDisabled() && !b_ref.IsPlayerRef() && !b_ref.IsPlayer()) {
 				RE::TESObjectREFR* newRef = &b_ref;
 				if (b_ref.formType == RE::FormType::ActorCharacter || b_ref.GetBaseObject()->formType == RE::FormType::Container) {
