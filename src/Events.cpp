@@ -401,7 +401,7 @@ static void DynamicTemperEnchant() {
 					if (ini.GetTemperSettings("DisableDynamicTemper") == 0) {
 						int chanceTemper = ini.GetTemperSettings("TemperChance");
 						if (ref->GetBaseObject()->formType == RE::FormType::Container && ini.IsVendorContainer(ref))
-							chanceTemper = ini.GetEnchantSettings("VendorTemperChance");
+							chanceTemper = ini.GetTemperSettings("VendorTemperChance");
 						else if (xRefType && (xRefType->locRefType == utility->locationBoss || xRefType->locRefType == utility->locationBossContainer))
 							chanceTemper = ini.GetTemperSettings("BossTemperChance");
 
