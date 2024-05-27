@@ -5,6 +5,7 @@ INIFile ini;
 
 constexpr auto settings_path = L"Data/SKSE/Plugins/EquipmentDurability/EquipmentDurability.ini";
 constexpr auto break_path = L"Data/SKSE/Plugins/EquipmentDurability/NoBreakForms.ini";
+constexpr auto material_path = L"Data/SKSE/Plugins/EquipmentDurability/MaterialRates.ini";
 constexpr auto enchant_path = L"Data/SKSE/Plugins/EquipmentDurability/";
 
 INIFile::INIFile() : EquipmentHealthThreshold(1.0f) {
@@ -13,6 +14,8 @@ INIFile::INIFile() : EquipmentHealthThreshold(1.0f) {
 	degradationMap["nobreakmagicdisallowenchanting"] = 1;
 	degradationMap["increasedurability"] = 1;
 	degradationMap["equipmenthealththreshold"] = 0;
+	degradationMap["materialdegredationrate"] = 0;
+	degradationMap["materialbreakchance"] = 0;
 
 	degradationRateMap["weaponsword"] = 3.0;
 	degradationRateMap["weapondagger"] = 3.0;
@@ -123,40 +126,61 @@ double INIFile::GetDegradationRateSettings(RE::TESForm* form) {
 
 	if (form->formType == RE::FormType::Weapon) {
 		RE::TESObjectWEAP *weap = form->As<RE::TESObjectWEAP>();
+
+		// Material Check
+		if (GetDegradationSettings("MaterialDegredationRate") >= 1) {
+			for (RE::BGSKeyword* keyword : weap->GetKeywords()) {
+				std::string tmp = keyword->GetFormEditorID();
+				ToLower(tmp);
+				if (degradationRateMaterialMap.count(tmp) >= 1)
+					return degradationRateMaterialMap.at(tmp);
+			}
+		}
+
+		// Default Degredation Rate
 		switch (weap->GetWeaponType()) {
-		case RE::WEAPON_TYPE::kOneHandSword:
-			return GetDegradationRateSettings("WeaponSword");
-		case RE::WEAPON_TYPE::kOneHandDagger:
-			return GetDegradationRateSettings("WeaponDagger");
-		case RE::WEAPON_TYPE::kOneHandAxe:
-			return GetDegradationRateSettings("WeaponWarAxe");
-		case RE::WEAPON_TYPE::kOneHandMace:
-			return GetDegradationRateSettings("WeaponMace");
-		case RE::WEAPON_TYPE::kTwoHandSword:
-			return GetDegradationRateSettings("WeaponGreatSword");
-		case RE::WEAPON_TYPE::kTwoHandAxe:
-			if (weap->HasKeyword(utility->keywordWarhammer))
-				return GetDegradationRateSettings("WeaponHammer");
-			else
-				return GetDegradationRateSettings("WeaponBattleAxe");
-		case RE::WEAPON_TYPE::kBow:
-			return GetDegradationRateSettings("WeaponBow");
-		case RE::WEAPON_TYPE::kCrossbow:
-			return GetDegradationRateSettings("WeaponCrossbow");
-		default:
-			return GetDegradationRateSettings("WeaponSword");
+			case RE::WEAPON_TYPE::kOneHandSword:
+				return GetDegradationRateSettings("WeaponSword");
+			case RE::WEAPON_TYPE::kOneHandDagger:
+				return GetDegradationRateSettings("WeaponDagger");
+			case RE::WEAPON_TYPE::kOneHandAxe:
+				return GetDegradationRateSettings("WeaponWarAxe");
+			case RE::WEAPON_TYPE::kOneHandMace:
+				return GetDegradationRateSettings("WeaponMace");
+			case RE::WEAPON_TYPE::kTwoHandSword:
+				return GetDegradationRateSettings("WeaponGreatSword");
+			case RE::WEAPON_TYPE::kTwoHandAxe:
+				if (weap->HasKeyword(utility->keywordWarhammer))
+					return GetDegradationRateSettings("WeaponHammer");
+				else
+					return GetDegradationRateSettings("WeaponBattleAxe");
+			case RE::WEAPON_TYPE::kBow:
+				return GetDegradationRateSettings("WeaponBow");
+			case RE::WEAPON_TYPE::kCrossbow:
+				return GetDegradationRateSettings("WeaponCrossbow");
+			default:
+				return GetDegradationRateSettings("WeaponSword");
 		}
 	} else if (form->formType == RE::FormType::Armor) {
 		RE::TESObjectARMO *armor = form->As<RE::TESObjectARMO>();
-		if (armor->IsLightArmor()) {
-			return GetDegradationRateSettings("LightArmor");
-		} else if (armor->IsHeavyArmor()) {
-			return GetDegradationRateSettings("HeavyArmor");
-		} else {
-			if (armor->HasKeyword(utility->keywordClothing)) {
-				return GetDegradationRateSettings("Clothing");
+
+		// Material Check
+		if (GetDegradationSettings("MaterialDegredationRate") >= 1) {
+			for (RE::BGSKeyword* keyword : armor->GetKeywords()) {
+				std::string tmp = keyword->GetFormEditorID();
+				ToLower(tmp);
+				if (degradationRateMaterialMap.count(tmp) >= 1)
+					return degradationRateMaterialMap.at(tmp);
 			}
 		}
+
+		// Default Degredation Rate
+		if (armor->IsLightArmor())
+			return GetDegradationRateSettings("LightArmor");
+		else if (armor->IsHeavyArmor())
+			return GetDegradationRateSettings("HeavyArmor");
+		else if (armor->HasKeyword(utility->keywordClothing))
+			return GetDegradationRateSettings("Clothing");
 	}
 
 	return GetDegradationRateSettings("DefaultArmor");
@@ -173,40 +197,61 @@ double INIFile::GetBreakChanceSettings(RE::TESForm* form) {
 
 	if (form->formType == RE::FormType::Weapon) {
 		RE::TESObjectWEAP *weap = form->As<RE::TESObjectWEAP>();
+
+		// Material Check
+		if (GetDegradationSettings("MaterialDegredationRate") >= 1) {
+			for (RE::BGSKeyword* keyword : weap->GetKeywords()) {
+				std::string tmp = keyword->GetFormEditorID();
+				ToLower(tmp);
+				if (breakChanceMaterialMap.count(tmp) >= 1)
+					return breakChanceMaterialMap.at(tmp);
+			}
+		}
+
+		// Default Break Chance
 		switch (weap->GetWeaponType()) {
-		case RE::WEAPON_TYPE::kOneHandSword:
-			return GetBreakChanceSettings("WeaponSword");
-		case RE::WEAPON_TYPE::kOneHandDagger:
-			return GetBreakChanceSettings("WeaponDagger");
-		case RE::WEAPON_TYPE::kOneHandAxe:
-			return GetBreakChanceSettings("WeaponWarAxe");
-		case RE::WEAPON_TYPE::kOneHandMace:
-			return GetBreakChanceSettings("WeaponMace");
-		case RE::WEAPON_TYPE::kTwoHandSword:
-			return GetBreakChanceSettings("WeaponGreatSword");
-		case RE::WEAPON_TYPE::kTwoHandAxe:
-			if (weap->HasKeyword(utility->keywordWarhammer))
-				return GetBreakChanceSettings("WeaponHammer");
-			else
-				return GetBreakChanceSettings("WeaponBattleAxe");
-		case RE::WEAPON_TYPE::kBow:
-			return GetBreakChanceSettings("WeaponBow");
-		case RE::WEAPON_TYPE::kCrossbow:
-			return GetBreakChanceSettings("WeaponCrossbow");
-		default:
-			return GetBreakChanceSettings("WeaponSword");
+			case RE::WEAPON_TYPE::kOneHandSword:
+				return GetBreakChanceSettings("WeaponSword");
+			case RE::WEAPON_TYPE::kOneHandDagger:
+				return GetBreakChanceSettings("WeaponDagger");
+			case RE::WEAPON_TYPE::kOneHandAxe:
+				return GetBreakChanceSettings("WeaponWarAxe");
+			case RE::WEAPON_TYPE::kOneHandMace:
+				return GetBreakChanceSettings("WeaponMace");
+			case RE::WEAPON_TYPE::kTwoHandSword:
+				return GetBreakChanceSettings("WeaponGreatSword");
+			case RE::WEAPON_TYPE::kTwoHandAxe:
+				if (weap->HasKeyword(utility->keywordWarhammer))
+					return GetBreakChanceSettings("WeaponHammer");
+				else
+					return GetBreakChanceSettings("WeaponBattleAxe");
+			case RE::WEAPON_TYPE::kBow:
+				return GetBreakChanceSettings("WeaponBow");
+			case RE::WEAPON_TYPE::kCrossbow:
+				return GetBreakChanceSettings("WeaponCrossbow");
+			default:
+				return GetBreakChanceSettings("WeaponSword");
 		}
 	} else if (form->formType == RE::FormType::Armor) {
 		RE::TESObjectARMO *armor = form->As<RE::TESObjectARMO>();
-		if (armor->IsLightArmor()) {
-			return GetBreakChanceSettings("LightArmor");
-		} else if (armor->IsHeavyArmor()) {
-			return GetBreakChanceSettings("HeavyArmor");
-		} else {
-			if (armor->HasKeyword(utility->keywordClothing)) {
-				return GetBreakChanceSettings("Clothing");
+
+		// Material Check
+		if (GetDegradationSettings("MaterialDegredationRate") >= 1) {
+			for (RE::BGSKeyword* keyword : armor->GetKeywords()) {
+				std::string tmp = keyword->GetFormEditorID();
+				ToLower(tmp);
+				if (breakChanceMaterialMap.count(tmp) >= 1)
+					return breakChanceMaterialMap.at(tmp);
 			}
 		}
+
+		// Default Break Chance
+		if (armor->IsLightArmor())
+			return GetBreakChanceSettings("LightArmor");
+		else if (armor->IsHeavyArmor())
+			return GetBreakChanceSettings("HeavyArmor");
+		else if (armor->HasKeyword(utility->keywordClothing))
+			return GetBreakChanceSettings("Clothing");
 	}
 
 	return GetBreakChanceSettings("DefaultArmor");
@@ -363,9 +408,9 @@ void INIFile::SetSettings() {
 		iniSettings.GetAllKeys(i_section.pItem, entryList);
 
 		if (stricmp(i_section.pItem, "DegradationRate")) {
-			SetINIData1(&entryList, i_section.pItem, &degradationRateMap);
+			SetINIData1(&entryList, i_section.pItem, &degradationRateMap, &iniSettings);
 		} else if (stricmp(i_section.pItem, "BreakChance")) {
-			SetINIData1(&entryList, i_section.pItem, &breakChanceMap);
+			SetINIData1(&entryList, i_section.pItem, &breakChanceMap, &iniSettings);
 		} else {
 			SetINIData1(&entryList, i_section.pItem);
 		}
@@ -380,6 +425,27 @@ void INIFile::SetSettings() {
 	iniBreak.GetAllSections(sectionList);
 
 	SetINIData2(&sectionList, &noBreakForms);
+
+	// Material Lists
+	CSimpleIniA iniMaterial;
+	iniMaterial.SetUnicode();
+	iniMaterial.LoadFile(material_path);
+
+	std::list<CSimpleIniA::Entry> m_sections;
+	iniMaterial.GetAllSections(m_sections);
+
+	for (auto m_section : m_sections)  {
+		std::list<CSimpleIniA::Entry> entryList;
+		iniMaterial.GetAllKeys(m_section.pItem, entryList);
+
+		if (stricmp(m_section.pItem, "DegradationRate")) {
+			SetINIData1(&entryList, m_section.pItem, &degradationRateMaterialMap, &iniMaterial);
+		} else if (stricmp(m_section.pItem, "BreakChance")) {
+			SetINIData1(&entryList, m_section.pItem, &breakChanceMaterialMap, &iniMaterial);
+		} else {
+			SetINIData1(&entryList, m_section.pItem);
+		}
+	}
 
 	// Enchantment Forms
 	std::vector<std::string> configs{};
@@ -410,7 +476,8 @@ void INIFile::SetSettings() {
 		iniEnch.SetMultiKey();
 		iniEnch.SetAllowKeyOnly();
 
-		if (const auto rc = iniEnch.LoadFile(path.c_str()); rc < 0) {
+		SI_Error rc = iniEnch.LoadFile(path.c_str());
+		if (rc < 0) {
 			logger::error("\tcouldn't read INI");
 			continue;
 		}
@@ -443,7 +510,8 @@ void INIFile::SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* secti
 			if (stricmp(cValue,"true"))
 				iValue = 1;
 
-			if (stricmp(str.pItem,"disabledegradation") || stricmp(str.pItem,"onlyplayer") || stricmp(str.pItem,"nobreakmagicdisallowenchanting") || stricmp(str.pItem,"increasedurability")) {
+			if (stricmp(str.pItem,"disabledegradation") || stricmp(str.pItem,"onlyplayer") || stricmp(str.pItem,"nobreakmagicdisallowenchanting") || stricmp(str.pItem,"increasedurability")
+					|| stricmp(str.pItem,"materialdegredationrate") || stricmp(str.pItem,"materialbreakchance")) {
 				degradationMap.at(key) = iValue;
 			} else if (stricmp(str.pItem,"disabledynamictemper")) {
 				temperMap.at(key) = iValue;
@@ -483,17 +551,13 @@ void INIFile::SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* secti
 	}
 }
 
-void INIFile::SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* section, std::unordered_map<std::string, double> *map) {
-	CSimpleIniA iniSettings;
-	iniSettings.SetUnicode();
-	iniSettings.LoadFile(settings_path);
-
+void INIFile::SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* section, std::unordered_map<std::string, double> *map, CSimpleIniA *iniSettings) {
 	for (CSimpleIniA::Entry str : *list) {
 		std::string key(str.pItem);
 		ToLower(key);
 
 		if (!key.empty()) {
-			std::string value(iniSettings.GetValue(section, str.pItem));
+			std::string value(iniSettings->GetValue(section, str.pItem));
 			double dValue = 0.0;
 			try {
 				dValue = std::stod(value);
@@ -505,13 +569,11 @@ void INIFile::SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* secti
 				logger::debug("   {}", e.what());
 			}
 
-			if (stricmp(str.pItem,"weaponsword") || stricmp(str.pItem,"weapondagger") || stricmp(str.pItem,"weaponwaraxe") || stricmp(str.pItem,"weaponmace")
-				|| stricmp(str.pItem,"weapongreatsword") || stricmp(str.pItem,"weaponhammer") || stricmp(str.pItem,"weaponbattleaxe") || stricmp(str.pItem,"weaponbow")
-				|| stricmp(str.pItem,"weaponcrossbow") || stricmp(str.pItem,"lightarmor") || stricmp(str.pItem,"heavyarmor") || stricmp(str.pItem,"clothing")
-				|| stricmp(str.pItem,"defaultarmor") || stricmp(str.pItem,"powerattackmultiplier") || stricmp(str.pItem,"followermultiplier") || stricmp(str.pItem,"npcmultiplier"))
-			{
-				if (dValue >= 0.0)
+			if (dValue >= 0.0) {
+				if (map->find(key) != map->end())
 					map->at(key) = dValue;
+				else
+					map->insert(std::make_pair(key, dValue));
 			}
 		}
 	}
@@ -630,10 +692,15 @@ void INIFile::ShowSettings() {
 		logger::debug("   {} = {}", map.first, map.second);
 	}
 
-	logger::debug("Loaded {} weapon enchantments", enchantWeapon.size());
-	logger::debug("Loaded {} head enchantments", enchantHead.size());
-	logger::debug("Loaded {} body enchantments", enchantBody.size());
-	logger::debug("Loaded {} hand enchantments", enchantHand.size());
-	logger::debug("Loaded {} foot enchantments", enchantFoot.size());
-	logger::debug("Loaded {} shield enchantments", enchantShield.size());
+	logger::debug("Material");
+	logger::debug("   Loaded {} Degredation Keywords", degradationRateMaterialMap.size());
+	logger::debug("   Loaded {} Break Chance Keywords", breakChanceMaterialMap.size());
+
+	logger::debug("Enchantments");
+	logger::debug("   Loaded {} weapon enchantments", enchantWeapon.size());
+	logger::debug("   Loaded {} head enchantments", enchantHead.size());
+	logger::debug("   Loaded {} body enchantments", enchantBody.size());
+	logger::debug("   Loaded {} hand enchantments", enchantHand.size());
+	logger::debug("   Loaded {} foot enchantments", enchantFoot.size());
+	logger::debug("   Loaded {} shield enchantments", enchantShield.size());
 }

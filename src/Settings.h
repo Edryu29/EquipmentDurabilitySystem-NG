@@ -44,18 +44,24 @@ private:
 
 	void SetSettings();
 	void SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* section);
-	void SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* section, std::unordered_map<std::string, double> *map);
+	void SetINIData1(std::list<CSimpleIniA::Entry> *list, const char* section, std::unordered_map<std::string, double> *map, CSimpleIniA *iniSettings);
 	void SetINIData2(std::list<CSimpleIniA::Entry> *list, std::unordered_set<int> *set);
 	void SetINIData3(std::list<CSimpleIniA::Entry> *list, const wchar_t* filename);
 	void ShowSettings();
 
 	// System Settings
 	std::unordered_map<std::string, int> degradationMap;
-	std::unordered_map<std::string, double> degradationRateMap;
-	std::unordered_map<std::string, double> breakChanceMap;
 	std::unordered_map<std::string, int> temperMap;
 	std::unordered_map<std::string, int> enchantMap;
 	std::unordered_map<std::string, int> widgetMap;
+
+	// Degradation Rates
+	std::unordered_map<std::string, double> degradationRateMap;
+	std::unordered_map<std::string, double> degradationRateMaterialMap;
+
+	// Break Chances
+	std::unordered_map<std::string, double> breakChanceMap;
+	std::unordered_map<std::string, double> breakChanceMaterialMap;
 
 	// Break Forms
 	std::unordered_set<int> noBreakForms;
