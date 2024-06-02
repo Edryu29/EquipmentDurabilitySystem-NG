@@ -142,13 +142,9 @@ static void TemperDecay(FoundEquipData eqD, RE::Actor* actor, bool powerAttack) 
 	if (rate == 0.0)
 		return;
 
-	logger::debug("Initial Rate: {}", rate);
-
 	// Health Degredation
 	if (powerAttack)
 		rate *= ini.GetDegradationRateSettings("PowerAttackMultiplier");
-
-	logger::debug("Power Attack Rate: {}", rate);
 
 	if (actor != utility->GetPlayer())
 	{
@@ -157,8 +153,6 @@ static void TemperDecay(FoundEquipData eqD, RE::Actor* actor, bool powerAttack) 
 		else
 			rate *= ini.GetDegradationRateSettings("NPCMultiplier");
 	}
-
-	logger::debug("Final Rate: {}", rate);
 
 	itemHealthPercent -= GetRandom(rate, std::pow(rate + 1.0, 2.0));
 
@@ -199,7 +193,7 @@ public:
 							} else {
 								RE::TESForm* weap = actor->GetEquippedObject(false);
 								if (weap) {
-									if (!weap->As<RE::TESObjectWEAP>()->IsBound())
+									if (weap->IsWeapon() && !weap->As<RE::TESObjectWEAP>()->IsBound())
 										TemperDecay(FoundEquipData::FindEquippedWeapon(exChanges, false, weap), actor, powerattack);
 								}
 							}
@@ -236,7 +230,7 @@ public:
 					RE::TESForm* form = RE::TESForm::LookupByID(a_event->source);
 					if (form) {
 						bool powerattack = a_event->flags.any(RE::TESHitEvent::Flag::kPowerAttack);
-						if (form->formType == RE::FormType::Weapon) {
+						if (form->IsWeapon()) {
 							RE::TESObjectWEAP* weap = form->As<RE::TESObjectWEAP>();
 							if (!weap->IsStaff() && !weap->IsBound()) {
 
@@ -254,7 +248,7 @@ public:
 								} else if (form == actor->GetEquippedObject(true))
 									TemperDecay(FoundEquipData::FindEquippedWeapon(exChanges, true, form), actor, powerattack);
 							}
-						} else if (form->formType == RE::FormType::Armor) {
+						} else if (form->IsArmor()) {
 							if (form->As<RE::TESObjectARMO>()->HasPartOf(RE::BGSBipedObjectForm::BipedObjectSlot::kShield)) {
 								TemperDecay(FoundEquipData::FindEquippedArmor(exChanges, RE::BGSBipedObjectForm::BipedObjectSlot::kShield), actor, powerattack);
 							}
