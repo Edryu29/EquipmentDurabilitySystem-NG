@@ -86,7 +86,7 @@ install(TARGETS ${PROJECT_NAME}
 ## Automatic plugin deployment
 ########################################################################################################################
 # Set output folder, defaults to an MO2 Mod folder
-set(OUTPUT_FOLDER "E:/ModOrganizer/Skyrim SE/mods/Equipment Duability System NG")
+set(OUTPUT_FOLDER "D:/Games/Skyrim/Mods/Equipment Durability System NG Tweaks")
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
 # Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)
