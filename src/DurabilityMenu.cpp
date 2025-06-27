@@ -699,7 +699,7 @@ void DurabilityMenu::UpdateMenu() {
 				if (eqD.CanTemper()) {
 					float itemHealthPercent = eqD.GetItemHealthPercent();
 					value = std::max(std::round((itemHealthPercent - 1.0f) * 1000.0), 0.0);
-					if (itemHealthPercent <= ini.EquipmentHealthThreshold)
+                    if (itemHealthPercent <= ini.EquipmentHealthThreshold && ( ini.GetBreakChanceSettings(eqD.pForm) == 0.0 || (ini.GetBreakChanceSettings(eqD.pForm) != 0.0 && eqD.CanBreak())))
 						color = (double)ini.GetWidgetSettings("BreakableColor");
 					else
 						color = (double)ini.GetWidgetSettings("UnbreakableColor");
@@ -799,7 +799,7 @@ void DurabilityMenu::UpdateMenu() {
 
 				float itemHealthPercent = eqD.GetItemHealthPercent();
 				value = std::max(std::round((itemHealthPercent - 1.0f) * 1000.0), 0.0);
-				if (itemHealthPercent <= ini.EquipmentHealthThreshold)
+                if (itemHealthPercent <= ini.EquipmentHealthThreshold && (ini.GetBreakChanceSettings(eqD.pForm) == 0.0 || (ini.GetBreakChanceSettings(eqD.pForm) != 0.0 && eqD.CanBreak())))
 					color = (double)ini.GetWidgetSettings("BreakableColor");
 				else
 					color = (double)ini.GetWidgetSettings("UnbreakableColor");
